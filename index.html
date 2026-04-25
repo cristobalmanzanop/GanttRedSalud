@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Carta Gantt — Clínica RedSalud Providencia</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#00C8C3;--teal-d:#00A9A5;--teal-l:#0D3535;--teal-ll:#0A2828;
+  --green:#A8E05A;--green-d:#8DC63F;--green-l:#1A2E0A;
+  --bg:#0A0A0A;--surface:#141414;--surface-alt:#1E1E1E;
+  --border:rgba(0,200,195,0.2);--border-m:rgba(0,200,195,0.35);
+  --text:#F0F0F0;--text-s:#B0CCCC;--text-m:#6A9A9A;
+  --radius:10px;--radius-lg:14px;
+  --font:'Segoe UI',Arial,sans-serif
+}
+body{background:var(--bg);font-family:var(--font);color:var(--text);min-height:100vh}
+.wrap{max-width:1100px;margin:0 auto;padding:0 1.25rem 2rem}
+.topbar{background:var(--teal-d);padding:0 1.25rem;margin:0 -1.25rem 1.75rem;display:flex;align-items:center;gap:14px;min-height:62px}
+.topbar-divider{width:1px;height:32px;background:rgba(255,255,255,0.3)}
+.topbar-text h1{font-size:15px;font-weight:600;color:#fff}
+.topbar-text p{font-size:11px;color:rgba(255,255,255,0.8);margin-top:1px}
+.topbar-badge{margin-left:auto;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);border-radius:20px;padding:4px 12px;font-size:11px;color:#fff;font-weight:500}
+.card{background:var(--surface);border:0.5px solid var(--border-m);border-top:3px solid var(--teal-d);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.25rem}
+.section-title{font-size:12px;font-weight:700;color:var(--teal);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:1.1rem;display:flex;align-items:center;gap:7px}
+.section-title::before{content:'';display:block;width:3px;height:14px;background:var(--green);border-radius:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+.field label{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--text-s);margin-bottom:5px}
+.field input{width:100%;height:38px;padding:0 11px;border:1.5px solid var(--border-m);border-radius:var(--radius);background:var(--surface-alt);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color 0.18s}
+.field input:focus{border-color:var(--teal);background:#1A2828}
+.field input:hover:not(:focus){border-color:var(--teal)}
+.field input::placeholder{color:var(--text-m)}
+.field input.error{border-color:#FF6B6B;background:#2A1010}
+.tooltip-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--teal-l);color:var(--teal);font-size:10px;font-weight:700;cursor:help;position:relative;flex-shrink:0}
+.tooltip-icon:hover .tip{display:block}
+.tip{display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 7px);background:#1E1E1E;color:#F0F0F0;border:1px solid var(--border-m);font-size:11px;padding:7px 10px;border-radius:7px;width:210px;white-space:normal;z-index:100;pointer-events:none;line-height:1.5}
+.tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1E1E1E}
+.col-labels{display:grid;grid-template-columns:1fr 130px 130px 50px 32px;gap:8px;margin-bottom:4px;padding:0 2px}
+.col-labels span{font-size:11px;font-weight:600;color:var(--text-s);letter-spacing:0.03em}
+.task-row{display:grid;grid-template-columns:1fr 130px 130px 50px 32px;gap:8px;align-items:center;margin-bottom:7px}
+.task-row input{height:36px;padding:0 10px;border:1.5px solid var(--border-m);border-radius:var(--radius);background:var(--surface-alt);color:var(--text);font-size:13px;font-family:var(--font);outline:none;width:100%;transition:border-color 0.15s}
+.task-row input::placeholder{color:var(--text-m)}
+.task-row input:focus{border-color:var(--teal);background:#1A2828}
+.task-row input:hover:not(:focus){border-color:var(--teal)}
+.task-row input[type="number"]{text-align:center}
+.task-row input.error{border-color:#FF6B6B !important;background:#2A1010 !important}
+.err-msg{font-size:11px;color:#FF6B6B;margin-top:-4px;margin-bottom:4px;padding-left:2px}
+.btn-del{background:transparent;border:none;color:var(--text-m);cursor:pointer;font-size:17px;width:32px;height:36px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.btn-del:hover{background:#2E1010;color:#FF6B6B}
+.actions{display:flex;gap:10px;margin-top:1.25rem;flex-wrap:wrap}
+.btn{height:38px;padding:0 18px;border-radius:var(--radius);font-size:13px;font-family:var(--font);cursor:pointer;font-weight:600;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-add{background:var(--surface-alt);border:1.5px solid var(--border-m);color:var(--text-s)}
+.btn-add:hover{background:var(--teal-l);border-color:var(--teal);color:var(--teal)}
+.btn-gen{background:var(--teal-d);border:none;color:#fff}
+.btn-gen:hover{background:#006E6B}
+.btn-xl{background:var(--surface-alt);border:1.5px solid var(--green-d);color:var(--green)}
+.btn-xl:hover{background:var(--green-l)}
+.btn-sheets{background:var(--surface-alt);border:1.5px solid #0F9D58;color:#4ADE80;font-weight:600}
+.btn-sheets:hover{background:#0A2A0A;border-color:#4ADE80}
+.btn-sheets:disabled{opacity:0.6;cursor:not-allowed}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite}
+.btn svg{width:15px;height:15px;flex-shrink:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+@media(max-width:500px){.stats{grid-template-columns:1fr}}
+.stat{background:var(--surface-alt);border-radius:var(--radius);padding:0.85rem 1rem;border:0.5px solid var(--border-m)}
+.stat-label{font-size:11px;color:var(--text-s);font-weight:600;letter-spacing:0.03em;text-transform:uppercase;margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:700;color:var(--teal)}
+.stat-sub{font-size:11px;color:var(--text-m);margin-top:2px}
+.chart-wrap{overflow-x:auto;border-radius:var(--radius);border:0.5px solid var(--border-m)}
+table{border-collapse:collapse;font-size:11.5px;background:var(--surface);min-width:100%;color:var(--text)}
+th{background:var(--surface-alt);color:var(--text-s);font-weight:600;padding:6px 8px;border:0.5px solid var(--border);text-align:center;white-space:nowrap}
+th.tcol{text-align:left;min-width:155px;position:sticky;left:0;z-index:2;background:var(--surface-alt)}
+th.month-h{background:var(--teal-d);color:#fff;font-size:11px;letter-spacing:0.04em}
+td{border:0.5px solid var(--border);height:30px}
+td.tname{padding:0 10px;white-space:nowrap;min-width:155px;background:var(--surface);position:sticky;left:0;z-index:1;font-size:12px;color:var(--text)}
+td.dc{min-width:26px;width:26px}
+td.we{background:#111111}
+.day-n{font-size:10px;line-height:1.2}
+.day-a{font-size:9px;color:var(--text-m);line-height:1}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--text-s);align-items:center;margin-top:10px;flex-wrap:wrap}
+.ldot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+.footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border-m);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.footer-brand{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-s);font-weight:500}
+.footer-info{font-size:11px;color:var(--text-m)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <svg width="36" height="36" viewBox="0 0 40 40" fill="none">
+      <path d="M20 34C20 34 5 24 5 14c0-5 4-8 8-8 3 0 6 2 7 4 1-2 4-4 7-4 4 0 8 3 8 8 0 10-15 20-15 20z" stroke="white" stroke-width="2" fill="none"/>
+      <path d="M10 18c0 0 3-4 6 0l2 4 3-10 3 10 2-4 4 0" stroke="#A8E05A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <div class="topbar-divider"></div>
+    <div class="topbar-text">
+      <h1>Clínica RedSalud Providencia</h1>
+      <p>Planificador de proyectos — Carta Gantt</p>
+    </div>
+    <div class="topbar-badge">Av. Salvador 100</div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Datos del proyecto</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Nombre del proyecto
+          <span class="tooltip-icon">?<span class="tip">Ingresa el nombre del proyecto o iniciativa. Aparecerá como título en la carta Gantt.</span></span>
+        </label>
+        <input type="text" id="projectName" placeholder="Ej: Implementación HIS 2025"/>
+      </div>
+      <div class="field">
+        <label>Fecha de inicio del proyecto
+          <span class="tooltip-icon">?<span class="tip">Fecha mínima del proyecto. Ninguna tarea puede comenzar antes de esta fecha.</span></span>
+        </label>
+        <input type="date" id="startDate" onchange="renderTasks()"/>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:0.5rem">Tareas del proyecto</div>
+    <div class="col-labels">
+      <span>Nombre de la tarea
+        <span class="tooltip-icon" style="vertical-align:middle">?<span class="tip">Nombre de la actividad o etapa. Las tareas pueden ser paralelas o secuenciales.</span></span>
+      </span>
+      <span style="text-align:center">Fecha inicio
+        <span class="tooltip-icon" style="vertical-align:middle">?<span class="tip">Inicio de esta tarea. No puede ser anterior a la fecha de inicio del proyecto.</span></span>
+      </span>
+      <span style="text-align:center">Fecha término
+        <span class="tooltip-icon" style="vertical-align:middle">?<span class="tip">Término de esta tarea. Los fines de semana se omiten del conteo de días hábiles.</span></span>
+      </span>
+      <span style="text-align:center">Días</span>
+      <span></span>
+    </div>
+    <div id="taskList"></div>
+
+    <div class="actions">
+      <button class="btn btn-add" onclick="addTask()">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Agregar tarea
+      </button>
+      <button class="btn btn-gen" onclick="generateChart()">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="2" rx="1" fill="white"/><rect x="2" y="7.5" width="8" height="2" rx="1" fill="white"/><rect x="2" y="11" width="10" height="2" rx="1" fill="white"/></svg>
+        Generar Gantt
+      </button>
+      <button class="btn btn-xl" onclick="exportExcel()">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9H3V2z" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v3h3" stroke="currentColor" stroke-width="1.5"/><path d="M6 8l1.5 2L9 8M6 10l1.5 2L9 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Descargar Excel
+      </button>
+      <button class="btn btn-sheets" id="btnSheets" onclick="openSheets()">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M11 9l2 2-2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Abrir en Sheets
+      </button>
+    </div>
+  </div>
+
+  <div id="chartArea"></div>
+
+  <div class="footer">
+    <div class="footer-brand">
+      <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
+        <path d="M20 34C20 34 5 24 5 14c0-5 4-8 8-8 3 0 6 2 7 4 1-2 4-4 7-4 4 0 8 3 8 8 0 10-15 20-15 20z" stroke="#00C8C3" stroke-width="2.5" fill="none"/>
+        <path d="M10 18c0 0 3-4 6 0l2 4 3-10 3 10 2-4 4 0" stroke="#A8E05A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      Clínica RedSalud Providencia
+    </div>
+    <div class="footer-info">redsalud.cl &nbsp;·&nbsp; 600-718-6000</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+'use strict';
+const DAYS_ES=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MONTHS_ES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const COLORS=['#00C8C3','#00A9A5','#4DDBD6','#A8E05A','#8DC63F','#33BFBB','#6AE08A','#5DCAA5'];
+const TC_XL=['FF00C8C3','FF00A9A5','FF4DDBD6','FFA8E05A','FF8DC63F','FF33BFBB','FF6AE08A','FF5DCAA5'];
+
+let tasks=[
+  {name:'Planificación', start:'', end:''},
+  {name:'Diseño',        start:'', end:''},
+  {name:'Desarrollo',   start:'', end:''},
+  {name:'Pruebas',      start:'', end:''},
+  {name:'Lanzamiento',  start:'', end:''}
+];
+let lastTaskDates=[],lastAllDays=[];
+
+function isWE(d){const v=d.getDay();return v===0||v===6}
+function wdBetween(s,e){let c=0,d=new Date(s);while(d<=e){if(!isWE(d))c++;d.setDate(d.getDate()+1);}return c}
+function calDays(s,e){const a=[];const d=new Date(s);while(d<=e){a.push(new Date(d));d.setDate(d.getDate()+1);}return a}
+function parseDate(str){return str?new Date(str+'T00:00:00'):null}
+function fmtDate(d){return d?d.toLocaleDateString('es-CL'):''}
+function stripTime(d){const n=new Date(d);n.setHours(0,0,0,0);return n}
+
+function getProjectStart(){
+  const sv=document.getElementById('startDate').value;
+  return sv?parseDate(sv):null;
+}
+
+function renderTasks(){
+  const el=document.getElementById('taskList');
+  el.innerHTML='';
+  const ps=getProjectStart();
+  tasks.forEach((t,i)=>{
+    const r=document.createElement('div');
+    r.className='task-row';
+    r.setAttribute('id','task-row-'+i);
+    r.innerHTML=`
+      <input type="text" value="${t.name}" placeholder="Nombre de la tarea" oninput="tasks[${i}].name=this.value"/>
+      <input type="date" id="ts${i}" value="${t.start}" onchange="handleTaskDate(${i},'start',this.value)" title="Fecha de inicio de esta tarea"/>
+      <input type="date" id="te${i}" value="${t.end}" onchange="handleTaskDate(${i},'end',this.value)" title="Fecha de término de esta tarea"/>
+      <span id="wd${i}" style="font-size:11px;color:var(--teal);text-align:center;font-weight:600"></span>
+      <button class="btn-del" onclick="removeTask(${i})" title="Eliminar">×</button>`;
+    el.appendChild(r);
+    updateWD(i);
+  });
+}
+
+function updateWD(i){
+  const t=tasks[i];
+  const el=document.getElementById('wd'+i);
+  if(!el)return;
+  if(t.start&&t.end){
+    const s=parseDate(t.start),e=parseDate(t.end);
+    if(s&&e&&e>=s){
+      const wd=wdBetween(s,e);
+      el.textContent=wd+'d';
+      el.style.color='var(--teal)';
+    } else {
+      el.textContent='!';
+      el.style.color='#FF6B6B';
+    }
+  } else {
+    el.textContent='—';
+    el.style.color='var(--text-m)';
+  }
+}
+
+function handleTaskDate(i,field,val){
+  tasks[i][field]=val;
+  const ps=getProjectStart();
+  const inp=document.getElementById(field==='start'?'ts'+i:'te'+i);
+  // Validar que no sea anterior al inicio del proyecto
+  if(ps&&val){
+    const d=parseDate(val);
+    if(d<stripTime(ps)){
+      inp.classList.add('error');
+      inp.title='No puede ser anterior a la fecha de inicio del proyecto ('+fmtDate(ps)+')';
+    } else {
+      inp.classList.remove('error');
+      inp.title='';
+    }
+  }
+  // Validar que fin >= inicio
+  if(tasks[i].start&&tasks[i].end){
+    const s=parseDate(tasks[i].start),e=parseDate(tasks[i].end);
+    const einp=document.getElementById('te'+i);
+    if(e<s){
+      einp.classList.add('error');
+      einp.title='La fecha de término no puede ser anterior al inicio';
+    } else {
+      einp.classList.remove('error');
+      einp.title='';
+    }
+  }
+  updateWD(i);
+}
+
+function addTask(){tasks.push({name:'Nueva tarea',start:'',end:''});renderTasks()}
+function removeTask(i){tasks.splice(i,1);renderTasks()}
+
+function syncInputs(){
+  document.querySelectorAll('#taskList input[type="text"]').forEach((inp,i)=>{tasks[i].name=inp.value||'Tarea '+(i+1)});
+}
+
+function validate(){
+  const sv=document.getElementById('startDate').value;
+  if(!sv){alert('Por favor ingresa una fecha de inicio del proyecto.');return false}
+  const ps=parseDate(sv);
+  let ok=true;
+  tasks.forEach((t,i)=>{
+    if(!t.start||!t.end){alert(`La tarea "${t.name}" necesita fecha de inicio y término.`);ok=false;return}
+    const s=parseDate(t.start),e=parseDate(t.end);
+    if(e<s){alert(`La tarea "${t.name}": la fecha de término no puede ser anterior al inicio.`);ok=false;return}
+    if(s<stripTime(ps)){alert(`La tarea "${t.name}": la fecha de inicio no puede ser anterior al inicio del proyecto (${fmtDate(ps)}).`);ok=false;return}
+  });
+  return ok;
+}
+
+function generateChart(){
+  syncInputs();
+  if(!validate())return;
+  const sv=document.getElementById('startDate').value;
+  const pn=document.getElementById('projectName').value||'Proyecto';
+  const ps=parseDate(sv);
+
+  const taskDates=tasks.map(t=>({
+    name:t.name,
+    start:parseDate(t.start),
+    end:parseDate(t.end),
+    duration:wdBetween(parseDate(t.start),parseDate(t.end))
+  }));
+  lastTaskDates=taskDates;
+
+  const allS=taskDates.map(t=>t.start),allE=taskDates.map(t=>t.end);
+  const minD=new Date(Math.min(...allS)),maxD=new Date(Math.max(...allE));
+  const allDays=calDays(minD,maxD);
+  lastAllDays=allDays;
+
+  const totalWD=wdBetween(minD,maxD);
+  const calDur=allDays.length;
+
+  const monthMap={};const monthKeys=[];
+  allDays.forEach(day=>{
+    const k=`${day.getFullYear()}-${day.getMonth()}`;
+    if(!monthMap[k]){monthMap[k]={label:MONTHS_ES[day.getMonth()]+' '+day.getFullYear(),count:0};monthKeys.push(k)}
+    monthMap[k].count++;
+  });
+
+  let html=`<div class="card">`;
+  html+=`<div class="stats">
+    <div class="stat"><div class="stat-label">Días hábiles totales</div><div class="stat-val">${totalWD}</div><div class="stat-sub">en el período del proyecto</div></div>
+    <div class="stat"><div class="stat-label">Duración calendario</div><div class="stat-val">${calDur}</div><div class="stat-sub">días totales</div></div>
+    <div class="stat"><div class="stat-label">Fecha de término</div><div class="stat-val" style="font-size:15px;padding-top:4px">${fmtDate(maxD)}</div><div class="stat-sub">${taskDates.length} tareas planificadas</div></div>
+  </div>`;
+  html+=`<div class="section-title" style="margin-bottom:10px">${pn}</div>`;
+  html+=`<div class="chart-wrap"><table>`;
+  html+=`<tr><th class="tcol">Tarea</th>`;
+  monthKeys.forEach(k=>{html+=`<th colspan="${monthMap[k].count}" class="month-h">${monthMap[k].label}</th>`});
+  html+=`</tr><tr><th class="tcol" style="font-size:10px;color:#6A9A9A;font-weight:400">Días hábiles</th>`;
+  allDays.forEach(day=>{
+    const we=isWE(day);
+    html+=`<th style="min-width:26px;width:26px;${we?'color:#6A9A9A;background:#111':''}"><div class="day-n">${day.getDate()}</div><div class="day-a">${DAYS_ES[day.getDay()]}</div></th>`;
+  });
+  html+=`</tr>`;
+  taskDates.forEach((t,i)=>{
+    const col=COLORS[i%COLORS.length];
+    html+=`<tr><td class="tname">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${col};margin-right:6px;vertical-align:middle"></span>
+      ${t.name} <span style="color:#6A9A9A;font-size:11px">(${t.duration}d)</span>
+    </td>`;
+    allDays.forEach(day=>{
+      if(isWE(day)){html+=`<td class="dc we"></td>`;return}
+      html+=`<td class="dc" style="background:${day>=t.start&&day<=t.end?col:'transparent'}"></td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+=`</table></div>`;
+  html+=`<div class="legend">
+    <span><span class="ldot" style="background:#111;border:1px solid rgba(0,200,195,0.3)"></span>Fin de semana</span>
+    <span><span class="ldot" style="background:#00C8C3"></span>Días activos</span>
+  </div></div>`;
+  document.getElementById('chartArea').innerHTML=html;
+}
+
+
+// ── Reemplaza esta URL con la de tu Google Apps Script publicado ──
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxTSKW8Xy7BYwPt2NwxxpHmOmci2I3vhF4dZRYUcXdUtWDRmDzwAtctQX_jByMDWugL/exec';
+
+function openSheets(){
+  syncInputs();
+  if(!validate())return;
+
+  const pn=document.getElementById('projectName').value||'Proyecto';
+  if(!lastTaskDates.length){alert('Primero genera el Gantt.');return}
+
+  const pe=new Date(Math.max(...lastTaskDates.map(t=>t.end)));
+  const ps=new Date(Math.min(...lastTaskDates.map(t=>t.start)));
+  const totalWD=wdBetween(ps,pe);
+
+  const payload={
+    projectName:pn,
+    projectStart:ps.toISOString(),
+    projectEnd:pe.toISOString(),
+    totalWD:totalWD,
+    tasks:tasks,
+    taskDates:lastTaskDates.map(t=>({
+      name:t.name,
+      start:t.start.toISOString(),
+      end:t.end.toISOString(),
+      duration:t.duration
+    })),
+    allDays:lastAllDays.map(d=>d.toISOString())
+  };
+
+  if(APPS_SCRIPT_URL==='PEGA_AQUI_TU_URL_DE_APPS_SCRIPT'){
+    alert('Primero configura la URL de Google Apps Script en el HTML.\nBusca la línea APPS_SCRIPT_URL y pega tu URL.');
+    return;
+  }
+
+  // Mostrar loading
+  const btn=document.getElementById('btnSheets');
+  const orig=btn.innerHTML;
+  btn.innerHTML='<svg viewBox="0 0 16 16" fill="none" class="spin"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="20" stroke-dashoffset="5"/></svg> Creando Sheet...';
+  btn.disabled=true;
+
+  // Abrir ventana inmediatamente desde el click (evita bloqueo de popup)
+  // Luego redirigirla con la URL real cuando llegue la respuesta
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  const getUrl  = APPS_SCRIPT_URL + '?data=' + encoded;
+
+  const newWin = window.open('', '_blank');
+  newWin.document.write(`
+    <html><head><title>Creando Sheet...</title>
+    <style>body{font-family:Arial,sans-serif;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;height:100vh;margin:0;background:#0A0A0A;color:#F0F0F0;}
+    .logo{font-size:22px;color:#00A9A5;font-weight:bold;margin-bottom:16px;}
+    .msg{font-size:14px;color:#B0CCCC;margin-bottom:24px;}
+    .spinner{width:36px;height:36px;border:3px solid #1E1E1E;border-top:3px solid #00A9A5;
+    border-radius:50%;animation:spin 0.8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}</style></head>
+    <body><div class="logo">RedSalud Providencia</div>
+    <div class="msg">Creando tu Carta Gantt en Google Sheets...</div>
+    <div class="spinner"></div></body></html>
+  `);
+
+  fetch(getUrl, { method:'GET', mode:'cors' })
+  .then(r => {
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  })
+  .then(res=>{
+    if(res.ok){
+      newWin.location.href = res.url;
+    } else {
+      newWin.close();
+      alert('Error al crear el Sheet: '+res.error);
+    }
+  })
+  .catch(err=>{
+    newWin.close();
+    alert('Error al conectar: '+err.message+'\n\nAsegúrate de que el Apps Script esté publicado con:\n- Ejecutar como: Yo (tu cuenta)\n- Acceso: Cualquier usuario');
+  })
+  .finally(()=>{
+    btn.innerHTML=orig;
+    btn.disabled=false;
+  });
+}
+
+function exportExcel(){
+  syncInputs();
+  if(!validate())return;
+
+  const pn=document.getElementById('projectName').value||'Proyecto';
+  const TEAL='FF00A9A5',TEAL_D='FF007F7C',TEAL_L='FFE0F6F5';
+  const BLACK='FF1A2E2E',WHITE='FFFFFFFF',GRAY_L='FFF0F8F8',GRAY_M='FF6A9090';
+
+  const pe=lastTaskDates[lastTaskDates.length-1]?new Date(Math.max(...lastTaskDates.map(t=>t.end))):new Date();
+  const ps=lastTaskDates[0]?new Date(Math.min(...lastTaskDates.map(t=>t.start))):new Date();
+  const totalWD=wdBetween(ps,pe);
+  const calDur=lastAllDays.length;
+
+  function cs(v,bg,fc,sz,bold,h,brd){
+    const s={font:{name:'Arial',sz:sz||10,bold:!!bold,color:{rgb:fc||BLACK}},
+      fill:{fgColor:{rgb:bg||WHITE},patternType:'solid'},
+      alignment:{horizontal:h||'left',vertical:'center'}};
+    if(brd)s.border={top:{style:'thin',color:{rgb:'FFDDDDDD'}},bottom:{style:'thin',color:{rgb:'FFDDDDDD'}},left:{style:'thin',color:{rgb:'FFDDDDDD'}},right:{style:'thin',color:{rgb:'FFDDDDDD'}}};
+    return{v,t:typeof v==='number'?'n':'s',s};
+  }
+  function th(t){return cs(t,BLACK,WHITE,10,true,'center');}
+
+  const wb=XLSX.utils.book_new();
+
+  // ── RESUMEN ───────────────────────────────────────────────
+  const rs=[];
+  rs.push([cs('CLÍNICA REDSALUD PROVIDENCIA',TEAL,WHITE,16,true,'center'),'','','','','']);
+  rs.push([cs('Planificación de Proyectos — '+pn,TEAL_D,WHITE,11,false,'center'),'','','','','']);
+  rs.push([cs('',GRAY_L),'','','','','']);
+  rs.push([cs('DÍAS HÁBILES',GRAY_L,GRAY_M,8,true,'center'),'',cs('DÍAS CALENDARIO',GRAY_L,GRAY_M,8,true,'center'),'',cs('ETAPAS',GRAY_L,GRAY_M,8,true,'center'),'']);
+  rs.push([cs(totalWD,WHITE,TEAL,22,true,'center'),'',cs(calDur,WHITE,TEAL,22,true,'center'),'',cs(lastTaskDates.length,WHITE,TEAL,22,true,'center'),'']);
+  rs.push([cs('Inicio: '+fmtDate(ps),WHITE,GRAY_M,9,false,'center'),'',cs('Fin: '+fmtDate(pe),WHITE,GRAY_M,9,false,'center'),'',cs(lastTaskDates.length+' tareas',WHITE,GRAY_M,9,false,'center'),'']);
+  rs.push([cs('',GRAY_L),'','','','','']);
+  rs.push([th('#'),th('Tarea'),th('Inicio'),th('Fin'),th('Días hábiles'),th('Progreso')]);
+  lastTaskDates.forEach((t,i)=>{
+    const alt=i%2===0?TEAL_L:WHITE;
+    const tc=TC_XL[i%TC_XL.length];
+    const pct=t.duration/Math.max(...lastTaskDates.map(x=>x.duration));
+    const bar='█'.repeat(Math.round(pct*15))+'░'.repeat(15-Math.round(pct*15));
+    rs.push([
+      cs(i+1,tc,WHITE,10,true,'center'),
+      cs(t.name,alt,BLACK,10,false,'left',true),
+      cs(fmtDate(t.start),alt,BLACK,10,false,'center',true),
+      cs(fmtDate(t.end),alt,BLACK,10,false,'center',true),
+      cs(t.duration,alt,TEAL_D,11,true,'center',true),
+      {v:bar,t:'s',s:{font:{name:'Arial',sz:9,color:{rgb:tc}},fill:{fgColor:{rgb:alt},patternType:'solid'},alignment:{horizontal:'left',vertical:'center'},border:{top:{style:'thin',color:{rgb:'FFDDDDDD'}},bottom:{style:'thin',color:{rgb:'FFDDDDDD'}},left:{style:'thin',color:{rgb:'FFDDDDDD'}},right:{style:'thin',color:{rgb:'FFDDDDDD'}}}}}
+    ]);
+  });
+  rs.push([cs('TOTAL',TEAL,WHITE,10,true,'right'),cs('',TEAL),cs('',TEAL),cs('',TEAL),cs(totalWD,TEAL,WHITE,12,true,'center'),cs(totalWD+' días hábiles · '+calDur+' días calendario',TEAL,WHITE,9,false,'left')]);
+  rs.push([cs('',WHITE),'','','','','']);
+  rs.push([cs('Generado el '+new Date().toLocaleDateString('es-CL')+'  ·  Clínica RedSalud Providencia  ·  Av. Salvador 100  ·  redsalud.cl',WHITE,GRAY_M,8),'','','','','']);
+  const ws1=XLSX.utils.aoa_to_sheet(rs);
+  ws1['!cols']=[{wch:5},{wch:26},{wch:14},{wch:14},{wch:14},{wch:24}];
+  ws1['!merges']=[
+    {s:{r:0,c:0},e:{r:0,c:5}},{s:{r:1,c:0},e:{r:1,c:5}},{s:{r:2,c:0},e:{r:2,c:5}},
+    {s:{r:3,c:0},e:{r:3,c:1}},{s:{r:3,c:2},e:{r:3,c:3}},{s:{r:3,c:4},e:{r:3,c:5}},
+    {s:{r:4,c:0},e:{r:4,c:1}},{s:{r:4,c:2},e:{r:4,c:3}},{s:{r:4,c:4},e:{r:4,c:5}},
+    {s:{r:5,c:0},e:{r:5,c:1}},{s:{r:5,c:2},e:{r:5,c:3}},{s:{r:5,c:4},e:{r:5,c:5}},
+    {s:{r:6,c:0},e:{r:6,c:5}},
+    {s:{r:rs.length-1,c:0},e:{r:rs.length-1,c:5}}
+  ];
+  XLSX.utils.book_append_sheet(wb,ws1,'Resumen');
+
+  // ── GANTT VISUAL ──────────────────────────────────────────
+  const gRows=[];
+  const monthMap2={};const mKeys2=[];
+  lastAllDays.forEach(day=>{
+    const k=MONTHS_ES[day.getMonth()]+' '+day.getFullYear();
+    if(!monthMap2[k]){monthMap2[k]=0;mKeys2.push(k);}monthMap2[k]++;
+  });
+  const mRow=[cs('CARTA GANTT',BLACK,WHITE,13,true,'center')];
+  lastAllDays.forEach(day=>{const k=MONTHS_ES[day.getMonth()]+' '+day.getFullYear();mRow.push(cs(k,TEAL,WHITE,8,true,'center'));});
+  gRows.push(mRow);
+  const dnRow=[cs('Tarea',BLACK,WHITE,10,true,'center')];
+  lastAllDays.forEach(day=>{const we=isWE(day);dnRow.push(cs(day.getDate(),we?'FFF0F8F8':'FFCCEEEE',we?'FFAACCCC':WHITE,8,!we,'center'));});
+  gRows.push(dnRow);
+  const DAYS_ES2=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const daRow=[cs('',BLACK)];
+  lastAllDays.forEach(day=>{const we=isWE(day);daRow.push(cs(DAYS_ES2[day.getDay()===0?6:day.getDay()-1],we?'FFF5FAFA':'FFE8F4F4',we?'FFAACCCC':TEAL_D,7,false,'center'));});
+  gRows.push(daRow);
+  lastTaskDates.forEach((t,i)=>{
+    const tc=TC_XL[i%TC_XL.length];
+    const row=[cs(t.name+' ('+t.duration+'d)',tc,WHITE,9,true,'left')];
+    lastAllDays.forEach(day=>{
+      if(isWE(day)){row.push(cs('','FFF0F8F8'));return;}
+      if(day>=t.start&&day<=t.end){
+        const v=day.getTime()===t.start.getTime()?'▶':day.getTime()===t.end.getTime()?'◀':'';
+        row.push({v,t:'s',s:{font:{name:'Arial',sz:7,color:{rgb:WHITE}},fill:{fgColor:{rgb:tc},patternType:'solid'},alignment:{horizontal:v==='▶'?'left':v==='◀'?'right':'center',vertical:'center'}}});
+      } else {
+        row.push(cs('',i%2===0?WHITE:GRAY_L));
+      }
+    });
+    gRows.push(row);
+  });
+  gRows.push([cs('▶ Inicio tarea   ◀ Fin tarea   █ Días activos   ░ Fin de semana (omitido)',WHITE,GRAY_M,8)]);
+  const ws2=XLSX.utils.aoa_to_sheet(gRows);
+  ws2['!cols']=[{wch:24},...lastAllDays.map(()=>({wch:3.2}))];
+  XLSX.utils.book_append_sheet(wb,ws2,'Gantt Visual');
+
+  // ── CRONOGRAMA ────────────────────────────────────────────
+  const cr=[];
+  cr.push([cs('CRONOGRAMA DETALLADO',TEAL,WHITE,14,true,'center'),'','','','']);
+  cr.push([cs('Inicio: '+fmtDate(ps)+'  ·  Fin: '+fmtDate(pe)+'  ·  '+totalWD+' días hábiles',TEAL_D,WHITE,10,false,'center'),'','','','']);
+  cr.push([cs('',TEAL_L),'','','','']);
+  cr.push([th('N°'),th('Tarea'),th('Inicio'),th('Fin'),th('Días hábiles')]);
+  lastTaskDates.forEach((t,i)=>{
+    const alt=i%2===0?TEAL_L:WHITE;const tc=TC_XL[i%TC_XL.length];
+    cr.push([cs(i+1,tc,WHITE,11,true,'center'),cs(t.name,alt,BLACK,10,false,'left',true),cs(fmtDate(t.start),alt,BLACK,10,false,'center',true),cs(fmtDate(t.end),alt,BLACK,10,false,'center',true),cs(t.duration,alt,TEAL_D,11,true,'center',true)]);
+  });
+  cr.push([cs('TOTAL DÍAS HÁBILES',TEAL,WHITE,10,true,'right'),'','','',cs(totalWD,TEAL,WHITE,12,true,'center')]);
+  cr.push([cs('',WHITE),'','','','']);
+  cr.push([cs('Clínica RedSalud Providencia  ·  Generado: '+new Date().toLocaleDateString('es-CL'),WHITE,GRAY_M,8),'','','','']);
+  const ws3=XLSX.utils.aoa_to_sheet(cr);
+  ws3['!cols']=[{wch:6},{wch:28},{wch:14},{wch:14},{wch:14}];
+  ws3['!merges']=[
+    {s:{r:0,c:0},e:{r:0,c:4}},{s:{r:1,c:0},e:{r:1,c:4}},{s:{r:2,c:0},e:{r:2,c:4}},
+    {s:{r:cr.length-3,c:0},e:{r:cr.length-3,c:3}},
+    {s:{r:cr.length-2,c:0},e:{r:cr.length-2,c:4}},
+    {s:{r:cr.length-1,c:0},e:{r:cr.length-1,c:4}}
+  ];
+  XLSX.utils.book_append_sheet(wb,ws3,'Cronograma');
+
+  XLSX.writeFile(wb,pn.replace(/\s+/g,'_')+'_Gantt_RedSalud.xlsx');
+}
+
+const hoy=new Date();
+// Skip weekends for project start
+while(isWE(hoy)) hoy.setDate(hoy.getDate()+1);
+document.getElementById('startDate').value=hoy.toISOString().split('T')[0];
+document.getElementById('projectName').value='Mi Proyecto';
+
+// Assign default sequential dates to sample tasks
+let cur=new Date(hoy);
+tasks.forEach(t=>{
+  while(isWE(cur)) cur.setDate(cur.getDate()+1);
+  t.start=cur.toISOString().split('T')[0];
+  // default 5 work days each
+  let e=new Date(cur), wd=0;
+  while(wd<4){e.setDate(e.getDate()+1);if(!isWE(e))wd++;}
+  t.end=e.toISOString().split('T')[0];
+  // next task starts next work day
+  let next=new Date(e);
+  next.setDate(next.getDate()+1);
+  while(isWE(next)) next.setDate(next.getDate()+1);
+  cur=next;
+});
+
+renderTasks();
+generateChart();
+</script>
+</body>
+</html>
