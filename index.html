@@ -357,7 +357,7 @@ function generateChart(){
 
 
 // ── Reemplaza esta URL con la de tu Google Apps Script publicado ──
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0IODOSy7aN9kpa1J6gUSGZOOSar6Pzccsq1RAzyiJwHry6fNnXkpsFAhMynJkfDOPfw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBgdzypybmAGoAsmdUZtR3ZgU-S-bQ7g1Hy52h7jzk-0Yy1eWzit95mpdvO8REuxa_Wg/exec';
 
 function openSheets(){
   syncInputs();
@@ -385,20 +385,26 @@ function openSheets(){
     allDays:lastAllDays.map(d=>d.toISOString())
   };
 
-  if(APPS_SCRIPT_URL==='https://script.google.com/macros/s/AKfycbx0IODOSy7aN9kpa1J6gUSGZOOSar6Pzccsq1RAzyiJwHry6fNnXkpsFAhMynJkfDOPfw/exec'){
+  if(APPS_SCRIPT_URL==='PEGA_AQUI_TU_URL_DE_APPS_SCRIPT'){
     alert('Primero configura la URL de Google Apps Script en el HTML.\nBusca la línea APPS_SCRIPT_URL y pega tu URL.');
     return;
   }
 
-  // Mostrar loading
-  const btn=document.getElementById('btnSheets');
-  const orig=btn.innerHTML;
-  btn.innerHTML='<svg viewBox="0 0 16 16" fill="none" class="spin"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="20" stroke-dashoffset="5"/></svg> Creando Sheet...';
-  btn.disabled=true;
+  // ── ENVÍO POR FORMULARIO (no fetch) ─────────────────────────
+  // Apps Script tiene un comportamiento poco confiable con fetch()
+  // en POST desde otro dominio (falla con "Failed to fetch" aunque
+  // el deploy esté bien configurado, por headers CORS inconsistentes
+  // en la redirección interna que hace en cada ejecución).
+  // Un <form> normal NO está sujeto a CORS (solo fetch/XHR lo están),
+  // así que este método evita el problema de raíz.
+  //
+  // El doPost(e) del Apps Script ahora debe leer los datos desde
+  // e.parameter.data (form-urlencoded) en vez de e.postData.contents
+  // (JSON body), y responder con una página HTML que redirige la
+  // ventana al Sheet recién creado.
 
-  // Abrir ventana inmediatamente desde el click (evita bloqueo de popup)
-  // Luego redirigirla con la URL real cuando llegue la respuesta
-  const newWin = window.open('', '_blank');
+  const winName = 'ganttSheetWin_' + Date.now();
+  const newWin = window.open('', winName);
   newWin.document.write(`
     <html><head><title>Creando Sheet...</title>
     <style>body{font-family:Arial,sans-serif;display:flex;flex-direction:column;align-items:center;
@@ -413,38 +419,26 @@ function openSheets(){
     <div class="spinner"></div></body></html>
   `);
 
-  // NOTA: se cambió de GET con query string a POST con body.
-  // Con proyectos largos (muchos días/tareas), la URL en GET superaba
-  // el límite de tamaño y el fetch fallaba con "Failed to fetch"
-  // antes de siquiera llegar al Apps Script.
-  // Content-Type text/plain evita que el navegador dispare un preflight
-  // OPTIONS, que Apps Script no maneja bien.
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'cors',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  })
-  .then(r => {
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return r.json();
-  })
-  .then(res=>{
-    if(res.ok){
-      newWin.location.href = res.url;
-    } else {
-      newWin.close();
-      alert('Error al crear el Sheet: '+res.error);
-    }
-  })
-  .catch(err=>{
-    newWin.close();
-    alert('Error al conectar: '+err.message+'\n\nAsegúrate de que el Apps Script esté publicado con:\n- Ejecutar como: Yo (tu cuenta)\n- Acceso: Cualquier usuario\n- Que exista una función doPost(e)');
-  })
-  .finally(()=>{
-    btn.innerHTML=orig;
-    btn.disabled=false;
-  });
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = APPS_SCRIPT_URL;
+  form.target = winName;
+
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'data';
+  input.value = JSON.stringify(payload);
+  form.appendChild(input);
+
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+
+  const btn=document.getElementById('btnSheets');
+  const orig=btn.innerHTML;
+  btn.innerHTML='<svg viewBox="0 0 16 16" fill="none" class="spin"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="20" stroke-dashoffset="5"/></svg> Creando Sheet...';
+  btn.disabled=true;
+  setTimeout(()=>{ btn.innerHTML=orig; btn.disabled=false; }, 4000);
 }
 
 function exportExcel(){
